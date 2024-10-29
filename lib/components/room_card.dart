@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pro_mobile/components/time_slot.dart';
 import 'package:pro_mobile/views/booking.dart';
+import 'package:pro_mobile/widgets/staff_add_edit.dart';
 
 class RoomCard extends StatefulWidget {
   final String role,
@@ -184,12 +185,18 @@ class _RoomCardState extends State<RoomCard> {
                                       const Color.fromRGBO(16, 80, 176, 1.0)),
                               onPressed: () => {
                                     // to edit page
-                                    // Navigator.push(
-                                    //   context,
-                                    //   MaterialPageRoute(
-                                    //       builder: (context) =>
-                                    //           Booking(roomId: widget.roomId)),
-                                    // )
+
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              StaffAddEditRoom(
+                                                room: Room(
+                                                    id: "id",
+                                                    name: "name",
+                                                    status: "status"),
+                                              )),
+                                    )
                                   },
                               child: const Text("Edit",
                                   style: TextStyle(

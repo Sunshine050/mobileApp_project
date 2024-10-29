@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pro_mobile/components/tabsBar.dart';
+import 'package:pro_mobile/widgets/staff_add_edit.dart';
 // import '../components/filters.dart';
 import '../components/room_card.dart';
 import '../components/search_btn.dart';
@@ -254,18 +255,24 @@ class _BrowseState extends State<Browse> {
                 TabsbarNavigator(role: widget.role)
               ],
             ),
-            Positioned(
-              right: 20.0,
-              bottom: 70.0,
-              child: FloatingActionButton(
-                backgroundColor: Colors.white,
-                onPressed: () {
-                  // Navigator.push(
-                  //     context, MaterialPageRoute(builder: (context) => ));
-                },
-                child: const Icon(Icons.add),
-              ),
-            ),
+            Builder(builder: (context) {
+              return (widget.role == "staff")
+                  ? Positioned(
+                      right: 20.0,
+                      bottom: 70.0,
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.white,
+                        onPressed: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => StaffAddEditRoom()));
+                        },
+                        child: const Icon(Icons.add),
+                      ),
+                    )
+                  : SizedBox.shrink();
+            }),
           ]),
         ),
       ),
