@@ -47,4 +47,5 @@ app.*.map.json
 /backend/.env
 /backend/package-lock.json
 /backend/config
+/backend/node_modules
 .env
