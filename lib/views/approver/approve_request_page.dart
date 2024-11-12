@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:pro_mobile/components/tabsBar.dart';
 
 class ApproveRequestPage extends StatefulWidget {
   @override
@@ -197,7 +196,6 @@ class _ApproveRequestPageState extends State<ApproveRequestPage> {
                     },
                   ),
                 ),
-                TabsbarNavigator(role: "approver")
               ],
             ),
     );

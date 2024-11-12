@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:pro_mobile/components/tabsBar.dart';
 
 class DashboardLec extends StatefulWidget {
   const DashboardLec({super.key});
@@ -100,7 +99,6 @@ class _DashboardLecState extends State<DashboardLec> {
             ],
           ),
           Spacer(),
-          TabsbarNavigator(role: "approver")
         ],
       ),
     );

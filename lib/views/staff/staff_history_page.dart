@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:pro_mobile/components/tabsBar.dart';
 
 class HistoryStaff extends StatefulWidget {
   const HistoryStaff({super.key});
@@ -299,7 +298,6 @@ class _HistoryStaffState extends State<HistoryStaff> {
                     },
                   ),
                 ),
-                TabsbarNavigator(role: "staff")
               ],
             ),
     );

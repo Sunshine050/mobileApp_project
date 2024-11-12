@@ -22,7 +22,7 @@ class _SearchButtonState extends State<SearchButton> {
         ),
         AnimatedContainer(
           duration: Duration(milliseconds: 300),
-          width: _isExpanded ? 200 : 0, // Adjust the width as needed
+          width: _isExpanded ? 200 : 0,
           height: 40,
           child: TextField(
             decoration: InputDecoration(

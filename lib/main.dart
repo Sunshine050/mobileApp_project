@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pro_mobile/views/home.dart';
 import 'package:pro_mobile/views/staff/manage_rooms_page.dart';
-import 'package:pro_mobile/widgets/staff.dart';
-import 'package:pro_mobile/widgets/student.dart'; // นำเข้าคลาส Student ที่ใช้ในหน้าแรก
 
 void main() => runApp(MyApp());
 

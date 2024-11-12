@@ -1,11 +1,14 @@
-// ignore_for_file: unnecessary_const
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:pro_mobile/components/message_dialog.dart';
 import 'package:pro_mobile/components/time_slot_radio.dart';
-import 'package:pro_mobile/views/student/booking_status_page.dart';
+import 'package:pro_mobile/models/page_index.dart';
+import 'package:pro_mobile/page_routes/student.dart';
+import 'package:pro_mobile/services/api_service.dart';
+import 'package:pro_mobile/services/rooms_service.dart';
 
 class Booking extends StatefulWidget {
-  final String roomId;
+  final int roomId;
 
   const Booking({super.key, required this.roomId});
 
@@ -14,34 +17,78 @@ class Booking extends StatefulWidget {
 }
 
 class _BookingState extends State<Booking> {
+  final PageIndex _currentRouteIndex = PageIndex();
+  final baseUrl = ApiService().getServerUrl();
+
   String? _selectedSlot;
   final TextEditingController _reasonController = TextEditingController();
-  late Map<String, dynamic> roomData;
+  List<dynamic> roomData = [
+    {
+      "id": "",
+      "room_name": "",
+      "desc": "",
+      "image": "",
+      "slot_1": "free",
+      "slot_2": "free",
+      "slot_3": "free",
+      "slot_4": "free",
+      "created_at": "",
+      "updated_at": ""
+    }
+  ];
 
   @override
   void initState() {
     super.initState();
 
-    getRoom();
+    _getRoom();
   }
 
-  void getRoom() {
+  Future<void> _getRoom() async {
     // api get room
-
-    // mock up data
-    roomData = {
-      "roomId": "1",
-      "roomName": 'room_name',
-      "desc": 'room_desc',
-      "img": 'room_1.jpg',
-      "slot_1": "free",
-      "slot_2": "reserved",
-      "slot_3": "pending",
-      "slot_4": "free",
-    };
+    try {
+      final response =
+          await RoomsService().getRoom(widget.roomId.toString()).timeout(
+                const Duration(seconds: 10),
+              );
+      if (response.statusCode == 200) {
+        setState(() {
+          roomData = jsonDecode(response.body);
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(jsonDecode(response.body)['message']),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+        ),
+      );
+    }
   }
 
-  void submit() {}
+  void submit() {
+    if (_selectedSlot == null || _reasonController.text.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return MessageDialog(
+            content: 'Please select a time slot and provide a reason.',
+            onConfirm: () {
+              Navigator.of(context).pop();
+            },
+            messageType: 'error',
+          );
+        },
+      );
+      return;
+    }
+  }
 
   // disable radio slot
   bool isAvailable(String slotValue) {
@@ -90,8 +137,8 @@ class _BookingState extends State<Booking> {
                     decoration: const BoxDecoration(
                       borderRadius: BorderRadius.all(Radius.circular(24)),
                     ),
-                    child: Image.asset(
-                      "assets/rooms/${roomData['img']}", // mock up
+                    child: Image.network(
+                      "http://$baseUrl/public/rooms/${roomData[0]['img']}",
                       fit: BoxFit.cover,
                     ),
                   )),
@@ -104,13 +151,13 @@ class _BookingState extends State<Booking> {
                       children: [
                         Row(children: [
                           Text(
-                            roomData["roomName"],
+                            roomData[0]["roomName"],
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
                         ]),
                         Row(children: [
                           Text(
-                            roomData["desc"],
+                            roomData[0]["desc"],
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ]),
@@ -123,7 +170,7 @@ class _BookingState extends State<Booking> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               GestureDetector(
-                                onTap: isAvailable(roomData["slot_1"])
+                                onTap: isAvailable(roomData[0]["slot_1"])
                                     ? () {
                                         setState(() {
                                           _selectedSlot = "slot_1";
@@ -136,7 +183,7 @@ class _BookingState extends State<Booking> {
                                         value: "slot_1",
                                         groupValue: _selectedSlot,
                                         onChanged:
-                                            isAvailable(roomData["slot_1"])
+                                            isAvailable(roomData[0]["slot_1"])
                                                 ? (value) => setState(() {
                                                       _selectedSlot =
                                                           value as String?;
@@ -144,7 +191,7 @@ class _BookingState extends State<Booking> {
                                                 : null),
                                     TimeSlotRadio(
                                         time: "08:00 - 10:00",
-                                        status: roomData["slot_1"]),
+                                        status: roomData[0]["slot_1"]),
                                   ],
                                 ),
                               ),
@@ -152,7 +199,7 @@ class _BookingState extends State<Booking> {
                                 width: 15,
                               ),
                               GestureDetector(
-                                onTap: isAvailable(roomData["slot_2"])
+                                onTap: isAvailable(roomData[0]["slot_2"])
                                     ? () {
                                         setState(() {
                                           _selectedSlot = "slot_2";
@@ -165,7 +212,7 @@ class _BookingState extends State<Booking> {
                                         value: "slot_2",
                                         groupValue: _selectedSlot,
                                         onChanged:
-                                            isAvailable(roomData["slot_2"])
+                                            isAvailable(roomData[0]["slot_2"])
                                                 ? (value) => setState(() {
                                                       _selectedSlot =
                                                           value as String?;
@@ -173,7 +220,7 @@ class _BookingState extends State<Booking> {
                                                 : null),
                                     TimeSlotRadio(
                                         time: "10:00 - 12:00",
-                                        status: roomData["slot_2"]),
+                                        status: roomData[0]["slot_2"]),
                                   ],
                                 ),
                               ),
@@ -183,7 +230,7 @@ class _BookingState extends State<Booking> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               GestureDetector(
-                                onTap: isAvailable(roomData["slot_3"])
+                                onTap: isAvailable(roomData[0]["slot_3"])
                                     ? () {
                                         setState(() {
                                           _selectedSlot = "slot_3";
@@ -196,7 +243,7 @@ class _BookingState extends State<Booking> {
                                         value: "slot_3",
                                         groupValue: _selectedSlot,
                                         onChanged:
-                                            isAvailable(roomData["slot_3"])
+                                            isAvailable(roomData[0]["slot_3"])
                                                 ? (value) => setState(() {
                                                       _selectedSlot =
                                                           value as String?;
@@ -204,7 +251,7 @@ class _BookingState extends State<Booking> {
                                                 : null),
                                     TimeSlotRadio(
                                         time: "13:00 - 15:00",
-                                        status: roomData["slot_3"]),
+                                        status: roomData[0]["slot_3"]),
                                   ],
                                 ),
                               ),
@@ -212,7 +259,7 @@ class _BookingState extends State<Booking> {
                                 width: 15,
                               ),
                               GestureDetector(
-                                onTap: isAvailable(roomData["slot_4"])
+                                onTap: isAvailable(roomData[0]["slot_4"])
                                     ? () {
                                         setState(() {
                                           _selectedSlot = "slot_4";
@@ -225,7 +272,7 @@ class _BookingState extends State<Booking> {
                                         value: "slot_4",
                                         groupValue: _selectedSlot,
                                         onChanged:
-                                            isAvailable(roomData["slot_4"])
+                                            isAvailable(roomData[0]["slot_4"])
                                                 ? (value) => setState(() {
                                                       _selectedSlot =
                                                           value as String?;
@@ -233,7 +280,7 @@ class _BookingState extends State<Booking> {
                                                 : null),
                                     TimeSlotRadio(
                                         time: "15:00 - 17:00",
-                                        status: roomData["slot_4"]),
+                                        status: roomData[0]["slot_4"]),
                                   ],
                                 ),
                               ),
@@ -278,6 +325,33 @@ class _BookingState extends State<Booking> {
                         ? null
                         : (() {
                             // api
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return MessageDialog(
+                                  content:
+                                      'Your Reservation for ${roomData[0]["roomName"]}\nhas been confirmed',
+                                  onConfirm: () {
+                                    // change to status page
+                                    _currentRouteIndex.setIndex(
+                                        index:
+                                            1); // set index to request status page
+                                    Navigator.pop(context);
+                                    Navigator.pop(context);
+                                    Navigator.pushReplacement<void, void>(
+                                      context,
+                                      MaterialPageRoute<void>(
+                                        builder: (BuildContext context) =>
+                                            const StudentRoute(),
+                                      ),
+                                    );
+                                  },
+                                  // no cancel button
+                                  onCancel: null,
+                                  messageType: 'ok',
+                                );
+                              },
+                            );
                           }),
                     child: const Text(
                       "Reserve this room",
@@ -293,6 +367,3 @@ class _BookingState extends State<Booking> {
     );
   }
 }
-
-
-//เพิ่มลิงค์ไปหน้า booking_status

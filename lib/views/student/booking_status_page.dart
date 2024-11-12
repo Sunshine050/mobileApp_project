@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:pro_mobile/components/tabsBar.dart';
 
 class BookingStatus extends StatefulWidget {
   @override
@@ -24,7 +23,6 @@ class _BookingStatusPageState extends State<BookingStatus> {
             ),
           ),
           Spacer(),
-          TabsbarNavigator(role: "student")
         ],
       ),
     );

@@ -1,34 +1,77 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:3000';
+  static const String _baseUrl = 'http://172.22.160.1:3000';
 
-  Future<dynamic> getRequest(String endpoint, {Map<String, String>? headers}) async {
-    final response = await http.get(Uri.parse('$baseUrl$endpoint'), headers: headers);
-    return _processResponse(response);
+  String getServerUrl() {
+    return _baseUrl;
   }
 
-  Future<dynamic> postRequest(String endpoint, Map<String, dynamic> data, {Map<String, String>? headers}) async {
-    final response = await http.post(Uri.parse('$baseUrl$endpoint'), headers: headers, body: jsonEncode(data));
-    return _processResponse(response);
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString("token");
   }
 
-  Future<dynamic> putRequest(String endpoint, Map<String, dynamic> data, {Map<String, String>? headers}) async {
-    final response = await http.put(Uri.parse('$baseUrl$endpoint'), headers: headers, body: jsonEncode(data));
-    return _processResponse(response);
-  }
-
-  Future<dynamic> deleteRequest(String endpoint, {Map<String, String>? headers}) async {
-    final response = await http.delete(Uri.parse('$baseUrl$endpoint'), headers: headers);
-    return _processResponse(response);
-  }
-
-  dynamic _processResponse(http.Response response) {
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('Failed to load data: ${response.statusCode}');
+  Future<dynamic> getReq(String endpoint, bool useToken) async {
+    final String? token;
+    final Map<String, String> headers = {};
+    if (useToken) {
+      token = (await getToken())!;
+      headers['Authorization'] = 'Bearer $token';
     }
+    final http.Response response =
+        await http.get(Uri.http(_baseUrl, endpoint), headers: headers);
+    return response;
   }
+
+  Future<dynamic> postReq(
+      String endpoint, Map<String, dynamic> body, bool useToken) async {
+    final String? token;
+    final Map<String, String> headers = {'Content-Type': 'application/json'};
+    if (useToken) {
+      token = (await getToken())!;
+      headers['Authorization'] = 'Bearer $token';
+    }
+    final http.Response response = await http.post(Uri.http(_baseUrl, endpoint),
+        headers: headers, body: jsonEncode(body));
+    return response;
+  }
+
+  Future<dynamic> putReq(
+      String endpoint, Map<String, dynamic> body, bool useToken) async {
+    final String? token;
+    final Map<String, String> headers = {'Content-Type': 'application/json'};
+    if (useToken) {
+      token = (await getToken())!;
+      headers['Authorization'] = 'Bearer $token';
+    }
+    final http.Response response = await http.put(Uri.http(_baseUrl, endpoint),
+        headers: headers, body: jsonEncode(body));
+    return response;
+  }
+
+  Future<dynamic> deleteReq(
+      String endpoint, Map<String, dynamic> body, bool useToken) async {
+    final String? token;
+    final Map<String, String> headers = {'Content-Type': 'application/json'};
+    if (useToken) {
+      token = (await getToken())!;
+      headers['Authorization'] = 'Bearer $token';
+    }
+    final http.Response response = await http.delete(
+        Uri.http(_baseUrl, endpoint),
+        headers: headers,
+        body: jsonEncode(body));
+    return response;
+  }
+
+  // dynamic _processResponse(http.Response response) {
+  //   if (response.statusCode >= 200 && response.statusCode < 300) {
+  //     return jsonDecode(response.body);
+  //   } else {
+  //     throw Exception('Failed to load data: ${response.statusCode}');
+  //   }
+  // }
 }

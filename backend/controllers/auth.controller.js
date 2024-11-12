@@ -1,6 +1,9 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
+require('dotenv').config();
+
+JWT_KEY = process.env.JWT_KEY || "my-secret-key";
 
 // Register
 exports.register = async (req, res) => {
@@ -60,12 +63,30 @@ exports.login = async (req, res) => {
     }
 
     // สร้าง token พร้อมข้อมูลบทบาทและ Object ID
-    const token = jwt.sign({ userId: user._id, username: user.username, role: user.role }, 'secret_key', { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user.id, username: user.username, role: user.role }, JWT_KEY, { expiresIn: '7d' });
 
     // ส่ง token และ userId กลับไปใน response
     return res.status(200).json({ token, userId: user._id });
 };
 
+// Logout
+exports.logout = async (req, res) => {
+    const token = req.headers['authorization'].split(" ")[1]; // ดึงโทเค็นจาก header
+    const expiresAt = req.user.exp;
+
+    if (!token) {
+        return res.status(400).json({ message: 'Token is required' });
+    }
+
+    try {
+        // เพิ่มโทเค็นไปยัง blacklist
+        await blacklistModel.addToken(token, expiresAt); // แยก 'Bearer' ออกจากโทเค็น
+        return res.status(200).json({ message: 'Logout successful' });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Logout failed' });
+    }
+};
 
 // Get all users
 exports.getAllUsers = async (req, res) => {

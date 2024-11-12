@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:pro_mobile/components/tabsBar.dart';
 
 class DashboardStaff extends StatefulWidget {
   const DashboardStaff({super.key});
@@ -99,7 +98,6 @@ class _DashboardStaffState extends State<DashboardStaff> {
             ],
           ),
           Spacer(),
-          TabsbarNavigator(role: "staff")
         ],
       ),
     );

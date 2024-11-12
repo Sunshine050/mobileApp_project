@@ -1,6 +1,14 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:pro_mobile/page_routes/approver.dart';
+import 'package:pro_mobile/page_routes/staff.dart';
+import 'package:pro_mobile/page_routes/student.dart';
+import 'package:pro_mobile/services/auth_service.dart';
 import 'package:pro_mobile/views/auth/register_page.dart';
-import 'package:pro_mobile/views/browse.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -22,36 +30,72 @@ class _LoginState extends State<Login> {
     super.dispose();
   }
 
-  void _onSignInPressed() {
+  void _onSignInPressed() async {
     if (_formKey.currentState!.validate()) {
-      String username = _usernameController.text;
-      String password = _passwordController.text;
-      print('Username: $username, Password: $password');
+      String username = _usernameController.text.trim();
+      String password = _passwordController.text.trim();
 
-      if (username == "student") {
-        Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-                builder: (context) => const Browse(
-                      role: "student",
-                    )),
-            (Route<dynamic> route) => false);
-      } else if (username == "approver") {
-        Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-                builder: (context) => const Browse(
-                      role: "approver",
-                    )),
-            (Route<dynamic> route) => false);
-      } else if (username == "staff") {
-        Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-                builder: (context) => const Browse(
-                      role: "staff",
-                    )),
-            (Route<dynamic> route) => false);
+      try {
+        final response = await AuthService().login(username, password).timeout(
+              const Duration(seconds: 10),
+            );
+        if (response.statusCode == 200) {
+          Map<String, dynamic> token = jsonDecode(response.body);
+
+          // get JWT token and save to local storage
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('token', token['token']);
+          // decode JWT to get username and role
+          final jwt = JWT.decode(token['token']);
+          Map payload = jwt.payload;
+
+          switch (payload['role']) {
+            case 'student':
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const StudentRoute(),
+                ),
+              );
+              break;
+            case 'approver':
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ApproverRoute(),
+                ),
+              );
+              break;
+            case 'staff':
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const StaffRoute(),
+                ),
+              );
+              break;
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(jsonDecode(response.body)['message']),
+            ),
+          );
+        }
+      } on TimeoutException catch (e) {
+        debugPrint(e.message);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message.toString()),
+          ),
+        );
+      } catch (e) {
+        debugPrint(e.toString());
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+          ),
+        );
       }
     }
   }

@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:pro_mobile/components/time_slot.dart';
-import 'package:pro_mobile/views/booking.dart';
-import 'package:pro_mobile/widgets/staff_add_edit.dart';
+import 'package:pro_mobile/components/bookmark_state.dart';
+import 'package:pro_mobile/services/api_service.dart';
+import 'package:pro_mobile/views/staff/manage_rooms_page.dart';
+import 'package:pro_mobile/views/student/booking_form_page.dart';
 
 class RoomCard extends StatefulWidget {
-  final String role,
-      roomId,
-      roomName,
-      desc,
-      img,
-      slot_1,
-      slot_2,
-      slot_3,
-      slot_4;
+  final Key? key;
+  final String role, roomName, desc, img, slot_1, slot_2, slot_3, slot_4;
+  final int roomId;
+  final bool isBookmarked;
 
   const RoomCard(
-      {super.key,
-      required this.role,
+      {required this.role,
       required this.roomId,
       required this.roomName,
       required this.desc,
@@ -24,33 +20,21 @@ class RoomCard extends StatefulWidget {
       required this.slot_1,
       required this.slot_2,
       required this.slot_3,
-      required this.slot_4});
+      required this.slot_4,
+      required this.isBookmarked,
+      this.key})
+      : super(key: key);
 
   @override
   State<RoomCard> createState() => _RoomCardState();
 }
 
 class _RoomCardState extends State<RoomCard> {
-  List<dynamic> bookmarkedState = [
-    false,
-    Colors.black,
-    Icon(Icons.bookmark_add_outlined)
-  ];
+  final baseUrl = ApiService().getServerUrl();
 
-  void bookmark() {
-    // api
-
-    setState(() {
-      if (bookmarkedState[0] == false) {
-        bookmarkedState[0] = true;
-        bookmarkedState[1] = const Color.fromARGB(255, 255, 193, 7);
-        bookmarkedState[2] = Icon(Icons.bookmark_added_rounded);
-      } else {
-        bookmarkedState[0] = false;
-        bookmarkedState[1] = Colors.black;
-        bookmarkedState[2] = Icon(Icons.bookmark_add_outlined);
-      }
-    });
+  @override
+  void initState() {
+    super.initState();
   }
 
   // if all slot are "reserved" or "disable" => disable btn
@@ -74,8 +58,8 @@ class _RoomCardState extends State<RoomCard> {
                       borderRadius:
                           BorderRadius.only(bottomRight: Radius.circular(16)),
                     ),
-                    child: Image.asset(
-                      "assets/rooms/${widget.img}",
+                    child: Image.network(
+                      "http://$baseUrl/public/rooms/${widget.img}",
                       fit: BoxFit.cover,
                       height: 165,
                     ),
@@ -123,13 +107,9 @@ class _RoomCardState extends State<RoomCard> {
                     // student => bookmark btn : else none
                     Builder(builder: (context) {
                       if (widget.role == "student") {
-                        return IconButton(
-                          icon: bookmarkedState[2],
-                          onPressed: () {
-                            bookmark();
-                          },
-                          color: bookmarkedState[1],
-                          iconSize: 24.0,
+                        return BookmarkButton(
+                          roomId: widget.roomId,
+                          isBookmarked: widget.isBookmarked,
                         );
                       } else {
                         return const SizedBox.shrink();
@@ -187,16 +167,12 @@ class _RoomCardState extends State<RoomCard> {
                                     // to edit page
 
                                     Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              StaffAddEditRoom(
-                                                room: Room(
-                                                    id: "id",
-                                                    name: "name",
-                                                    status: "status"),
-                                              )),
-                                    )
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => ManageRooms(
+                                                  isAdd: false,
+                                                  roomId: widget.roomId,
+                                                )))
                                   },
                               child: const Text("Edit",
                                   style: TextStyle(

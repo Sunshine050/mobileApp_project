@@ -1,46 +1,30 @@
 import 'package:flutter/material.dart';
-
-import '../views/booking.dart';
+import 'package:pro_mobile/components/bookmark_state.dart';
+import 'package:pro_mobile/services/api_service.dart';
+import 'package:pro_mobile/views/student/booking_form_page.dart';
 
 class RoomCardSm extends StatefulWidget {
-  final String roomId, roomName, img, slot_1, slot_2, slot_3, slot_4;
+  final Key? key;
+  final String roomName, img, slot_1, slot_2, slot_3, slot_4;
+  final int roomId;
 
   const RoomCardSm(
-      {super.key,
-      required this.roomId,
+      {required this.roomId,
       required this.roomName,
       required this.img,
       required this.slot_1,
       required this.slot_2,
       required this.slot_3,
-      required this.slot_4});
+      required this.slot_4,
+      this.key})
+      : super(key: key);
 
   @override
   State<RoomCardSm> createState() => _RoomCardSmState();
 }
 
 class _RoomCardSmState extends State<RoomCardSm> {
-  List<dynamic> bookmarkedState = [
-    true,
-    Color.fromARGB(255, 255, 193, 7),
-    Icons.bookmark_added_rounded
-  ];
-
-  void bookmark() {
-    // api
-
-    setState(() {
-      if (bookmarkedState[0] == false) {
-        bookmarkedState[0] = true;
-        bookmarkedState[1] = const Color.fromARGB(255, 255, 193, 7);
-        bookmarkedState[2] = Icons.bookmark_added_rounded;
-      } else {
-        bookmarkedState[0] = false;
-        bookmarkedState[1] = Colors.black;
-        bookmarkedState[2] = Icons.bookmark_add_outlined;
-      }
-    });
-  }
+  final baseUrl = ApiService().getServerUrl();
 
   // if all slot are "reserved" or "disable" => disable btn
   bool isAvailable(List<String> slotStatus) {
@@ -72,16 +56,11 @@ class _RoomCardSmState extends State<RoomCardSm> {
                     widget.roomName,
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      bookmark();
-                    },
-                    child: Icon(
-                      bookmarkedState[2],
-                      color: bookmarkedState[1],
-                      size: 22,
-                    ),
-                  ),
+                  SizedBox(
+                      height: 22,
+                      width: 22,
+                      child: BookmarkButton(
+                          isBookmarked: true, roomId: widget.roomId))
                 ],
               ),
             ),
