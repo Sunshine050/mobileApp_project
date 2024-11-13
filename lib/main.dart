@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:pro_mobile/views/home.dart';
-import 'package:pro_mobile/views/staff/manage_rooms_page.dart';
 
 void main() => runApp(MyApp());
 

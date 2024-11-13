@@ -42,7 +42,7 @@ const Room = {
     },
     //-------------------------------------------------------------------//
     getBookmarked: (userId, callback) => {
-        db.query('select room_id from bookmarks where user_id = ?', [userId], callback);
+        db.query('select b.room_id, r.room_name, r.image, r.slot_1, r.slot_2, r.slot_3 ,r.slot_4 from bookmarks b INNER JOIN rooms r ON b.room_id = r.id where user_id = ?', [userId], callback);
     },
     //-------------------------------------------------------------------//
     searchRoom: (room_name, callback) => {

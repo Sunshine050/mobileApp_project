@@ -202,7 +202,7 @@ class _BrowseState extends State<Browse> {
                             roomId: itemData?['id'],
                             roomName: itemData?['room_name'],
                             desc: itemData?['desc'],
-                            img: itemData?['img'],
+                            img: itemData?['image'],
                             slot_1: itemData?['slot_1'],
                             slot_2: itemData?['slot_2'],
                             slot_3: itemData?['slot_3'],

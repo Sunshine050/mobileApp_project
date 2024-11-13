@@ -39,8 +39,8 @@ class _RoomCardSmState extends State<RoomCardSm> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Expanded(
-            child: Image.asset(
-              widget.img,
+            child: Image.network(
+              "http://$baseUrl/public/rooms/${widget.img}",
               fit: BoxFit.fitHeight,
               width: 180,
             ),
