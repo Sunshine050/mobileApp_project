@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:pro_mobile/models/page_index.dart';
 import 'package:pro_mobile/page_routes/approver.dart';
@@ -8,6 +11,8 @@ import 'package:pro_mobile/page_routes/staff.dart';
 import 'package:pro_mobile/page_routes/student.dart';
 import 'package:pro_mobile/services/auth_service.dart';
 import 'package:pro_mobile/views/auth/register_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 
@@ -166,7 +171,6 @@ class _LoginState extends State<Login> {
                   const SizedBox(height: 40),
                   ElevatedButton(
                     onPressed: _onSignInPressed,
-                    child: const Text('SIGN IN'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black,
                       foregroundColor: Colors.white,
@@ -174,6 +178,7 @@ class _LoginState extends State<Login> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
+                    child: const Text('SIGN IN'),
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -182,7 +187,6 @@ class _LoginState extends State<Login> {
                       const Text('New Member?'),
                       TextButton(
                         onPressed: () {
-                          // Navigate to Register page
                           Navigator.push(
                             context,
                             MaterialPageRoute(
