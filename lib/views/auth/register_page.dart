@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:pro_mobile/services/auth_service.dart';
 import 'package:pro_mobile/views/auth/login_page.dart';
 
 class Register extends StatefulWidget {
@@ -14,6 +17,45 @@ class _RegisterState extends State<Register> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
+
+  final AuthService _authService = AuthService();
+
+  Future<void> submit() async {
+    try {
+      if (passwordController.text != confirmPasswordController.text) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Passwords do not match')),
+        );
+        return;
+      }
+      final response = await _authService.register(usernameController.text,
+          emailController.text, passwordController.text);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        Map<String, dynamic> res = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res['message']), // แสดงข้อความจาก response
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        // นำทางไปยังหน้า Login หลังจากลงทะเบียนสำเร็จ
+        Future.delayed(const Duration(seconds: 2), () {
+          Navigator.pop(context);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const Login()),
+          );
+        });
+      } else {
+        throw Exception(jsonDecode(response.body)['message']);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registration failed: ${e.toString()}')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,14 +114,7 @@ class _RegisterState extends State<Register> {
               const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () {
-                  // Here you can add your sign-up logic,
-                  // such as validating the inputs and registering the user.
-
-                  // After successful sign-up, navigate to the Login page
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const Login()),
-                  );
+                  submit();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,

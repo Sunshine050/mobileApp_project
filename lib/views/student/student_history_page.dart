@@ -1,4 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:pro_mobile/components/search_btn.dart';
+import 'package:pro_mobile/models/booking_model.dart';
+import 'package:pro_mobile/services/general_service.dart';
 
 class History extends StatefulWidget {
   const History({super.key});
@@ -10,69 +15,71 @@ class History extends StatefulWidget {
 class _HistoryState extends State<History> {
   // int _currentIndex = 2; // Default to History tab
   final TextEditingController _searchController = TextEditingController();
-  List<Map<String, dynamic>> filteredReservations = [];
-  bool _isSearching = false;
-
-  // Sample reservations
-  final List<Map<String, dynamic>> reservations = [
-    {
-      'room_title': 'Room 1',
-      'time': '08:00 - 10:00',
-      'date': '01/01/2077',
-      'status': 'Approved',
-      'approver': 'John Doe',
-      'reason': 'Project discussion meeting',
-    },
-    {
-      'room_title': 'Room 2',
-      'time': '08:00 - 10:00',
-      'date': '01/01/2077',
-      'status': 'Rejected',
-      'approver': 'Jane Doe',
-      'reason': 'Team building session',
-    },
-    {
-      'room_title': 'Room 3',
-      'time': '08:00 - 10:00',
-      'date': '01/01/2077',
-      'status': 'Canceled',
-      'approver': null,
-      'reason': 'Personal reasons',
-    },
-  ];
+  final GeneralService _generalService = GeneralService();
+  final BookingModel reservations = BookingModel();
 
   @override
   void initState() {
     super.initState();
-    filteredReservations =
-        reservations; // Initialize filtered list with reservations
-  }
 
-  void _filterReservations(String query) {
-    setState(() {
-      filteredReservations = reservations.where((reservation) {
-        return reservation['room_title']
-                .toLowerCase()
-                .contains(query.toLowerCase()) ||
-            reservation['status'].toLowerCase().contains(query.toLowerCase());
-      }).toList();
-    });
-  }
+    _getBooking();
 
-  void _toggleSearchBar() {
-    setState(() {
-      _isSearching = !_isSearching;
-      if (!_isSearching) {
-        _searchController.clear();
-        filteredReservations = reservations; // Reset the list
-      }
+    reservations.addListener(() {
+      forceRerendered();
     });
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    // reservations.removeListener(() {});
     super.dispose();
+  }
+
+  void forceRerendered() {
+    if (mounted) {
+      setState(() {
+        bool temp = true;
+      });
+    }
+  }
+
+  Future<void> _getBooking() async {
+    try {
+      final response = await _generalService.getUserHistory().timeout(
+            const Duration(seconds: 10),
+          );
+      if (response.statusCode == 200) {
+        setState(() {
+          reservations.setBookings(bookingList: jsonDecode(response.body));
+        });
+        // debugPrint(_rooms.length.toString());
+      } else {
+        throw Exception(jsonDecode(response.body)['message']);
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
+  String mapSlotValue(slot) {
+    final String temp;
+    switch (slot) {
+      case "slot_1":
+        temp = "08:00 - 10:00";
+        break;
+      case "slot_2":
+        temp = "10:00 - 12:00";
+        break;
+      case "slot_3":
+        temp = "13:00 - 15:00";
+        break;
+      default:
+        temp = "15:00 - 17:00";
+        break;
+    }
+    return temp;
   }
 
   @override
@@ -84,30 +91,17 @@ class _HistoryState extends State<History> {
           child: Text('Reservation History'),
         ),
         actions: [
-          if (_isSearching)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: SizedBox(
-                width: 150,
-                child: TextField(
-                  controller: _searchController,
-                  decoration: const InputDecoration(
-                    hintText: 'Search',
-                    border: InputBorder.none,
-                  ),
-                  onChanged: _filterReservations,
-                ),
-              ),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: _toggleSearchBar,
-            ),
+          Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: SearchButton(
+                searchBy: SearchBy.booking,
+                controller: _searchController,
+              ))
         ],
       ),
-      body: filteredReservations.isEmpty
+      body: reservations.getBookings().isEmpty
           ? Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Center(
                   child: _searchController.text.isNotEmpty
@@ -135,9 +129,9 @@ class _HistoryState extends State<History> {
               children: [
                 Expanded(
                   child: ListView.builder(
-                    itemCount: filteredReservations.length,
+                    itemCount: reservations.getBookings().length,
                     itemBuilder: (context, index) {
-                      final reservation = filteredReservations[index];
+                      final reservation = reservations.getBookings()[index];
                       return Padding(
                         padding: const EdgeInsets.symmetric(
                             vertical: 2.0, horizontal: 16.0),
@@ -158,7 +152,7 @@ class _HistoryState extends State<History> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          reservation['room_title'],
+                                          reservation['room_name'],
                                           style: const TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w500,
@@ -168,14 +162,14 @@ class _HistoryState extends State<History> {
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
-                                          '${reservation['time']}',
+                                          'Slot: ${mapSlotValue(reservation['slot'])}',
                                           style: const TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w400,
                                           ),
                                         ),
                                         Text(
-                                          '${reservation['date']}',
+                                          'Date: ${reservation['booking_date'].split("T")[0]}',
                                           style: const TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w400,
@@ -228,7 +222,7 @@ class _HistoryState extends State<History> {
                                                 CrossAxisAlignment.end,
                                             children: [
                                               Text(
-                                                'By: [${reservation['approver'] ?? 'Not assigned'}]',
+                                                'By: [${reservation['approved_by'] ?? 'Not assigned'}]',
                                                 style: const TextStyle(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w300,
@@ -243,35 +237,24 @@ class _HistoryState extends State<History> {
                               ),
                               const SizedBox(height: 5),
                               // Add Reason section
-                              Column(
+                              Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const Text(
-                                    'Reason',
+                                    'Your reason: ',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.grey,
+                                      fontWeight: FontWeight.w500,
+                                      // color: Colors.grey,
                                     ),
                                   ),
-                                  const SizedBox(height: 2),
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(8.0),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color: Colors.grey,
-                                        width: 1.0,
-                                      ),
-                                      borderRadius: BorderRadius.circular(4.0),
-                                    ),
-                                    child: Text(
-                                      '${reservation['reason'] ?? 'No reason provided'}',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w300,
-                                        color: Colors.black,
-                                      ),
+                                  // const SizedBox(height: 2),
+                                  Text(
+                                    '${reservation['reason'] ?? 'No reason provided'}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w300,
+                                      color: Colors.black,
                                     ),
                                   ),
                                 ],

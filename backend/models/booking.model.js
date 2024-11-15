@@ -24,6 +24,40 @@ const Booking = {
       callback(null, results);
     });
   },
+  //-------------------------------------------------------------------//
+
+  // find booking by room name
+  findByRoomName: (room_name,userId, role, callback) => {
+    if (role == "student") {
+      db.query('SELECT * FROM bookings INNER JOIN rooms ON rooms.id = bookings.room_id WHERE rooms.room_name LIKE ? AND bookings.user_id = ?', ['%' + room_name + '%', userId], (err, result) => {
+        if (err) {
+          console.error('Error fetching booking:', err);
+          callback(err, null);
+        } else {
+          callback(null, result);
+        }
+      });
+    } else if (role == "approver") {
+      db.query('SELECT * FROM bookings INNER JOIN rooms ON rooms.id = bookings.room_id WHERE rooms.room_name LIKE ? AND bookings.approved_by = ?', ['%' + room_name + '%', userId], (err, result) => {
+        if (err) {
+          console.error('Error fetching booking:', err);
+          callback(err, null);
+        } else {
+          callback(null, result);
+        }
+      });
+    } else {
+      db.query('SELECT * FROM bookings INNER JOIN rooms ON rooms.id = bookings.room_id WHERE rooms.room_name LIKE ?', ['%' + room_name + '%'], (err, result) => {
+        if (err) {
+          console.error('Error fetching booking:', err);
+          callback(err, null);
+        } else {
+          callback(null, result);
+        }
+      });
+    }
+
+  },
 
   //-------------------------------------------------------------------//
 
@@ -92,7 +126,7 @@ const Booking = {
               });
             });
           } else {
-            return callback(null); 
+            return callback(null);
           }
         } else {
           console.error('No booking found for bookingId:', bookingId);
@@ -132,7 +166,7 @@ const Booking = {
   //-------------------------------------------------------------------//
   cancelRequest: (bookingId, callback) => {
     db.query("UPDATE `bookings` SET `status` = 'cancel' WHERE `id` = ?", [bookingId], callback);
-  },  
+  },
 
   //-------------------------------------------------------------------//
   getAllBooking: (userId, role, callback) => {
@@ -190,7 +224,7 @@ const Booking = {
           WHERE b.approved_by = ?`;
         break;
     }
-    
+
     db.query(query, [userId], callback);
   },
 };

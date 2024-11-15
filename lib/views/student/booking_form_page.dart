@@ -4,8 +4,8 @@ import 'package:pro_mobile/components/message_dialog.dart';
 import 'package:pro_mobile/components/time_slot_radio.dart';
 import 'package:pro_mobile/models/page_index.dart';
 import 'package:pro_mobile/page_routes/student.dart';
-import 'package:pro_mobile/services/api_service.dart';
 import 'package:pro_mobile/services/rooms_service.dart';
+import 'package:pro_mobile/services/student_service.dart';
 
 class Booking extends StatefulWidget {
   final int roomId;
@@ -18,7 +18,7 @@ class Booking extends StatefulWidget {
 
 class _BookingState extends State<Booking> {
   final PageIndex _currentRouteIndex = PageIndex();
-  final baseUrl = ApiService().getServerUrl();
+  final studentService = StudentService();
 
   String? _selectedSlot;
   final TextEditingController _reasonController = TextEditingController();
@@ -55,13 +55,14 @@ class _BookingState extends State<Booking> {
     }
   }
 
-  void submit() {
+  Future<dynamic> submit() async {
     if (_selectedSlot == null || _reasonController.text.isEmpty) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return MessageDialog(
             content: 'Please select a time slot and provide a reason.',
+            onConfirmText: 'OK',
             onConfirm: () {
               Navigator.of(context).pop();
             },
@@ -69,8 +70,18 @@ class _BookingState extends State<Booking> {
           );
         },
       );
-      return;
+      return null;
     }
+
+    final Map<String, dynamic> bookingData = {
+      "room_id": widget.roomId,
+      "slot": _selectedSlot,
+      "reason": _reasonController.text
+    };
+    // debugPrint(bookingData['reason']);
+
+    final response = await studentService.bookRoom(bookingData);
+    return response;
   }
 
   // disable radio slot
@@ -107,17 +118,10 @@ class _BookingState extends State<Booking> {
         body: SafeArea(
             child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          // child: Builder(builder: (BuildContext context) {
-          //   debugPrint("hi2");
-          //   return SizedBox.shrink();
-          // }),
           child: FutureBuilder(
               future: _getRoomData(),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
-                  // roomData = snapshot.data!;
-                  // debugPrint("snapdata: ${snapshot.data[0]["room_name"]}");
-                  // debugPrint("roomData: ${snapshot.data[0]["room_name"]}");
                   return Column(
                     children: [
                       Expanded(
@@ -129,7 +133,7 @@ class _BookingState extends State<Booking> {
                                   BorderRadius.all(Radius.circular(24)),
                             ),
                             child: Image.network(
-                              "http://$baseUrl/public/rooms/${snapshot.data[0]['image']}",
+                              "http://${studentService.getServerUrl()}/public/rooms/${snapshot.data[0]['image']}",
                               fit: BoxFit.cover,
                             ),
                           )),
@@ -307,9 +311,9 @@ class _BookingState extends State<Booking> {
                                     labelText: 'Reason',
                                     hintText: 'Please enter your reason',
                                     helperText: 'required',
-                                    errorText: _reasonController.text.isEmpty
-                                        ? "Please enter your reason"
-                                        : null,
+                                    // errorText: _reasonController.text.isEmpty
+                                    //     ? "Please enter your reason"
+                                    //     : null,
                                     border: const OutlineInputBorder(),
                                   ),
                                 )),
@@ -323,40 +327,70 @@ class _BookingState extends State<Booking> {
                             style: ElevatedButton.styleFrom(
                                 backgroundColor:
                                     const Color.fromRGBO(16, 80, 176, 1.0)),
-                            onPressed: _reasonController.text.isEmpty
-                                ? null
-                                : (() {
-                                    // api
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return MessageDialog(
-                                          content:
-                                              'Your Reservation for ${snapshot.data[0]["room_name"]}\nhas been confirmed',
-                                          onConfirm: () {
-                                            // change to status page
-                                            _currentRouteIndex.setIndex(
-                                                index:
-                                                    1); // set index to request status page
-                                            Navigator.pop(context);
-                                            Navigator.pop(context);
-                                            Navigator.pushReplacement<void,
-                                                void>(
-                                              context,
-                                              MaterialPageRoute<void>(
-                                                builder:
-                                                    (BuildContext context) =>
-                                                        const StudentRoute(),
-                                              ),
-                                            );
-                                          },
-                                          // no cancel button
-                                          onCancel: null,
-                                          messageType: 'ok',
+                            onPressed: (() async {
+                              // api
+                              final resposne = await submit();
+                              if (resposne.statusCode >= 200 &&
+                                  resposne.statusCode < 300) {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return MessageDialog(
+                                      content:
+                                          'Your Reservation for ${snapshot.data[0]["room_name"]}\nhas been confirmed',
+                                      onConfirmText: "OK",
+                                      onConfirm: () {
+                                        // change to status page
+                                        _currentRouteIndex.setIndex(
+                                            index:
+                                                1); // set index to request status page
+                                        Navigator.pop(context);
+                                        Navigator.pop(context);
+                                        Navigator.pushReplacement<void, void>(
+                                          context,
+                                          MaterialPageRoute<void>(
+                                            builder: (BuildContext context) =>
+                                                const StudentRoute(),
+                                          ),
                                         );
                                       },
+                                      // no cancel button
+                                      onCancel: null,
+                                      messageType: 'ok',
                                     );
-                                  }),
+                                  },
+                                );
+                              } else {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return MessageDialog(
+                                      content:
+                                          'Something went wrong\nplease try again',
+                                      onConfirmText: "OK",
+                                      onConfirm: () {
+                                        // change to status page
+                                        _currentRouteIndex.setIndex(
+                                            index:
+                                                0); // set index to browse page
+                                        Navigator.pop(context);
+                                        Navigator.pop(context);
+                                        Navigator.pushReplacement<void, void>(
+                                          context,
+                                          MaterialPageRoute<void>(
+                                            builder: (BuildContext context) =>
+                                                const StudentRoute(),
+                                          ),
+                                        );
+                                      },
+                                      // no cancel button
+                                      onCancel: null,
+                                      messageType: 'error',
+                                    );
+                                  },
+                                );
+                              }
+                            }),
                             child: const Text(
                               "Reserve this room",
                               style: TextStyle(

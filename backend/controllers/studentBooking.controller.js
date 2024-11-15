@@ -10,38 +10,48 @@ const bookRoom = (req, res) => {
   if (!userId || !room_id || !slot || !reason) {
     return res.status(400).send('Missing required fields');
   }
+  // Booking.getPending(userId, (err, result) => {
+  //   if (err) {
+  //     console.error("Error creating booking:", err);
+  //     return res.status(500).send('Error creating booking');
+  //   }
 
-  Room.isSlotFree(room_id, slot, (err, isFree) => {
-    if (err) {
-      console.error("Error checking slot availability:", err);
-      return res.status(500).send('Error checking slot availability');
-    }
-
-    if (!isFree) {
-      return res.status(400).send('This slot is unavailable');
-    }
-
-    Room.updateSlotStatus(room_id, slot, 'pending', (err) => {
+  //   if (result.length != 0) {
+  //     return res.status(401).send('Inpending Request');
+  //   }
+    Room.isSlotFree(room_id, slot, (err, isFree) => {
       if (err) {
-        console.error("Error updating room slot status:", err);
-        return res.status(500).send('Error updating room slot status');
+        console.error("Error checking slot availability:", err);
+        return res.status(500).send('Error checking slot availability');
       }
 
-      const user_id = userId;
-      Booking.create({ user_id, room_id, slot, status: 'pending', reason }, (err, result) => {
+      if (!isFree) {
+        return res.status(400).send('This slot is unavailable');
+      }
+
+      Room.updateSlotStatus(room_id, slot, 'pending', (err) => {
         if (err) {
-          console.error("Error creating booking:", err);
-          return res.status(500).send('Error creating booking');
+          console.error("Error updating room slot status:", err);
+          return res.status(500).send('Error updating room slot status');
         }
 
-        // ส่งข้อความสำเร็จกลับ
-        res.status(201).json({
-          message: 'Booking created successfully',
-          bookingId: result.insertId,
+        const user_id = userId;
+        Booking.create({ user_id, room_id, slot, status: 'pending', reason }, (err, result) => {
+          if (err) {
+            console.error("Error creating booking:", err);
+            return res.status(500).send('Error creating booking');
+          }
+
+          // ส่งข้อความสำเร็จกลับ
+          res.status(201).json({
+            message: 'Booking created successfully',
+            bookingId: result.insertId,
+          });
         });
       });
     });
-  });
+  // });
+
 };
 
 //-------------------------------------------------------------------//
@@ -54,8 +64,8 @@ const getBookings = (req, res) => {
 
   // ใช้ SQL JOIN เพื่อดึงข้อมูลทั้งจาก bookings และ rooms
   const query = `
-    SELECT bookings.id, bookings.user_id, bookings.room_id, bookings.slot, bookings.status, 
-           bookings.booking_date, bookings.reason, rooms.room_name
+    SELECT bookings.id, bookings.room_id, bookings.slot, bookings.status, 
+           bookings.booking_date, bookings.reason, rooms.room_name, rooms.desc, rooms.image
     FROM bookings
     JOIN rooms ON bookings.room_id = rooms.id
     WHERE bookings.user_id = ? AND bookings.status = "pending"
@@ -134,7 +144,20 @@ const cancel = (req, res) => {
       console.error("Error canceling booking:", err);
       return res.status(500).send('Internal server error');
     }
-    res.send("canceled"); // ส่งการยืนยันว่าได้ยกเลิกการจอง
+    Booking.getRequestById(booking_id, (err, result) => {
+      if (err) {
+        console.error("Error canceling booking:", err);
+        return res.status(500).send('Internal server error');
+      }
+
+      Room.updateSlotStatus(result['room_id'], result['slot'], "free", (err, result) => {
+        if (err) {
+          console.error("Error canceling booking:", err);
+          return res.status(500).send('Internal server error');
+        }
+        res.send("canceled"); // ส่งการยืนยันว่าได้ยกเลิกการจอง
+      })
+    });
   });
 };
 
@@ -144,7 +167,7 @@ const cancel = (req, res) => {
 // Export functions
 module.exports = {
   bookRoom,
-  cancel,  
+  cancel,
   getBookings,
   getBookmarked,
   bookmarked,

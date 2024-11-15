@@ -15,16 +15,22 @@ class AuthService extends ApiService {
       String username, String email, String password) async {
     final validatedEmail = validateEmail(email);
     final response = await postReq(
-        "/api/auth/register",
-        {'username': username, 'email': validatedEmail, 'password': password},
-        false);
+        endpoint: "/api/auth/register",
+        body: {
+          'username': username,
+          'email': validatedEmail,
+          'password': password
+        },
+        useToken: false);
     return response;
   }
 
   // ฟังก์ชัน login สำหรับการเข้าสู่ระบบ
   Future<http.Response> login(String username, String password) async {
     final response = await postReq(
-        "/api/auth/login", {'username': username, 'password': password}, false);
+        endpoint: "/api/auth/login",
+        body: {'username': username, 'password': password},
+        useToken: false);
     return response;
   }
 

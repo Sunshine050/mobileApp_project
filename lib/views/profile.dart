@@ -92,6 +92,7 @@ class _ProfileState extends State<Profile> {
                     builder: (BuildContext context) {
                       return MessageDialog(
                         content: 'Are you sure?',
+                        onConfirmText: "LOGOUT",
                         onConfirm: (() async {
                           await _logout();
                           Navigator.of(context).pushAndRemoveUntil(
@@ -100,6 +101,7 @@ class _ProfileState extends State<Profile> {
                               ),
                               (Route<dynamic> route) => false);
                         }),
+                        onCancelText: "NO",
                         onCancel: () {
                           // close dialog
                           Navigator.of(context).pop();
@@ -135,7 +137,7 @@ class _ProfileState extends State<Profile> {
               borderRadius: BorderRadius.all(Radius.circular(150)),
             ),
             child: Image.asset(
-              "assets/rooms/room_1.jpg", // mock up
+              "assets/user/3d_avatar_8.png", // mock up
               fit: BoxFit.cover,
               width: 150,
               height: 150,

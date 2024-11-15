@@ -25,6 +25,20 @@ const history = async (req, res) => {
         res.status(500).send('Internal server error');
     }
 }
+//-------------------------------------------------------------------//
+const search = async (req, res) => {
+    const { roomName } = req.params;
+    const { userId, role } = req.user;
+
+    try {
+        Booking.findByRoomName(roomName, userId, role, (err, result) => {
+            if (err) return res.status(500).send('Internal server error');
+            res.json(result);
+        });
+    } catch (error) {
+        res.status(500).send('Internal server error');
+    }
+}
 
 //-------------------------------------------------------------------//
 // data for dashboard
@@ -49,6 +63,7 @@ const summary = async (req, res) => {
 module.exports = {
     userData,
     history,
+    search,
     summary // data for dashboard
 }
 //-------------------------------------------------------------------//

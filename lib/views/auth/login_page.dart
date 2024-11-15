@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:pro_mobile/models/page_index.dart';
 import 'package:pro_mobile/page_routes/approver.dart';
 import 'package:pro_mobile/page_routes/staff.dart';
 import 'package:pro_mobile/page_routes/student.dart';
@@ -48,6 +49,9 @@ class _LoginState extends State<Login> {
           // decode JWT to get username and role
           final jwt = JWT.decode(token['token']);
           Map payload = jwt.payload;
+
+          final PageIndex _currentRouteIndex = PageIndex();
+          _currentRouteIndex.setIndex(index: 0);
 
           switch (payload['role']) {
             case 'student':

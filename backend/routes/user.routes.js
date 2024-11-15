@@ -9,6 +9,9 @@ router.get('/userData', verifyToken, userController.userData);
 // for history
 router.get('/history', verifyToken, userController.history);
 //-------------------------------------------------------------------//
+// for search history
+router.get('/history/:roomName', verifyToken, userController.search);
+//-------------------------------------------------------------------//
 // for dashboard
 router.get('/dashboard', verifyToken, userController.summary);
 //-------------------------------------------------------------------//

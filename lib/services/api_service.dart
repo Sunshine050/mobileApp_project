@@ -14,7 +14,8 @@ class ApiService {
     return prefs.getString("token");
   }
 
-  Future<dynamic> getReq(String endpoint, bool useToken) async {
+  Future<dynamic> getReq(
+      {required String endpoint, required bool useToken}) async {
     final String? token;
     final Map<String, String> headers = {};
     if (useToken) {
@@ -27,7 +28,9 @@ class ApiService {
   }
 
   Future<dynamic> postReq(
-      String endpoint, Map<String, dynamic> body, bool useToken) async {
+      {required String endpoint,
+      required Map<String, dynamic> body,
+      required bool useToken}) async {
     final String? token;
     final Map<String, String> headers = {'Content-Type': 'application/json'};
     if (useToken) {
@@ -40,20 +43,30 @@ class ApiService {
   }
 
   Future<dynamic> putReq(
-      String endpoint, Map<String, dynamic> body, bool useToken) async {
+      {required String endpoint,
+      Map<String, dynamic>? body,
+      required bool useToken}) async {
     final String? token;
-    final Map<String, String> headers = {'Content-Type': 'application/json'};
+    Map<String, String> headers = {};
+
     if (useToken) {
       token = (await getToken())!;
       headers['Authorization'] = 'Bearer $token';
     }
+    if (body == null) {
+      body = {};
+    } else {
+      headers['Content-Type'] = 'application/json';
+    }
     final http.Response response = await http.put(Uri.http(_baseUrl, endpoint),
-        headers: headers, body: jsonEncode(body));
+        headers: headers, body: body);
     return response;
   }
 
   Future<dynamic> deleteReq(
-      String endpoint, Map<String, dynamic> body, bool useToken) async {
+      {required String endpoint,
+      Map<String, dynamic>? body,
+      required bool useToken}) async {
     final String? token;
     final Map<String, String> headers = {'Content-Type': 'application/json'};
     if (useToken) {

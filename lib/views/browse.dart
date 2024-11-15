@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:pro_mobile/models/room_model.dart';
 import 'package:pro_mobile/services/rooms_service.dart';
 import 'package:pro_mobile/services/student_service.dart';
 import 'package:pro_mobile/views/staff/manage_rooms_page.dart';
@@ -20,7 +21,9 @@ class _BrowseState extends State<Browse> {
   final _filtersModel = FiltersModel();
   final _roomsService = RoomsService();
   final _studentService = StudentService();
-  List<dynamic> _rooms = [];
+  final _rooms = RoomModel();
+  final TextEditingController _searchController = TextEditingController();
+
   List<dynamic> _bookmarkedRooms = [];
 
   final List<String> _filtersList = [
@@ -35,11 +38,15 @@ class _BrowseState extends State<Browse> {
     super.initState();
 
     // api get _rooms
-    _getBookmarked();
+    // _getBookmarked();
     _getRoom();
 
     _filtersModel.addListener(() {
       _filterRooms();
+    });
+
+    _rooms.addListener(() {
+      _getBookmarked();
     });
   }
 
@@ -50,9 +57,9 @@ class _BrowseState extends State<Browse> {
           );
       if (response.statusCode == 200) {
         setState(() {
-          _rooms = jsonDecode(response.body);
+          _rooms.setRooms(roomList: jsonDecode(response.body));
         });
-        debugPrint(_rooms.length.toString());
+        // debugPrint(_rooms.length.toString());
       } else {
         throw Exception(jsonDecode(response.body)['message']);
       }
@@ -75,7 +82,7 @@ class _BrowseState extends State<Browse> {
             );
         if (response.statusCode == 200) {
           setState(() {
-            _rooms = jsonDecode(response.body);
+            _rooms.setRooms(roomList: jsonDecode(response.body));
           });
         }
       }
@@ -99,8 +106,10 @@ class _BrowseState extends State<Browse> {
       }
     } catch (e) {
       debugPrint(e.toString());
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
     }
   }
 
@@ -116,7 +125,11 @@ class _BrowseState extends State<Browse> {
         title: const Text("Room List"),
         actions: [
           Padding(
-              padding: const EdgeInsets.only(right: 16), child: SearchButton())
+              padding: const EdgeInsets.only(right: 16),
+              child: SearchButton(
+                searchBy: SearchBy.room,
+                controller: _searchController,
+              ))
         ],
       ),
       body: SafeArea(
@@ -184,14 +197,14 @@ class _BrowseState extends State<Browse> {
               Expanded(
                 child: Builder(
                   builder: (context) {
-                    if (_rooms.isEmpty) {
+                    if (_rooms.getRooms().isEmpty) {
                       return const SizedBox.shrink();
                     }
                     return ListView.builder(
                       padding: const EdgeInsets.only(bottom: 24),
-                      itemCount: _rooms.length,
+                      itemCount: _rooms.getRooms().length,
                       itemBuilder: (context, index) {
-                        final itemData = _rooms[index];
+                        final itemData = _rooms.getRooms()[index];
                         return Padding(
                           padding: const EdgeInsets.symmetric(
                               vertical: 8, horizontal: 24),
@@ -246,6 +259,7 @@ class _BrowseState extends State<Browse> {
   @override
   void dispose() {
     _filtersModel.removeListener(() {});
+    _rooms.removeListener(() {});
     super.dispose();
   }
 }

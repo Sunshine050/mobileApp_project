@@ -8,36 +8,21 @@ JWT_KEY = process.env.JWT_KEY || "my-secret-key";
 // Register
 exports.register = async (req, res) => {
     const { username, password, email } = req.body;
-
-    // ตรวจสอบประเภทผู้ใช้จากอีเมล
-    let role = null;
-    if (email.endsWith('student@gmail.com')) {
-        role = 'student';
-    } else if (email.endsWith('staff@gmail.com')) {
-        role = 'staff';
-    } else if (email.endsWith('approver@gmail.com')) {
-        role = 'approver';
-    } else {
-        return res.status(400).send('Invalid email domain');
-    }
-
     // แฮชรหัสผ่านก่อนบันทึก
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // บันทึกข้อมูลผู้ใช้ลงฐานข้อมูล
     const newUser = {
         username,
         password: hashedPassword,
         email,
-        role
     };
-
     try {
-        // บันทึกผู้ใช้ใหม่ลงฐานข้อมูล (ใช้ฟังก์ชัน User.create สมมติว่ามีการคืนค่าเป็นไปตามฐานข้อมูล)
+        // บันทึกผู้ใช้ใหม่ลงฐานข้อมูล
+        const isDuplicate = await User.findByUsername(username);
+        if (isDuplicate) {
+            return res.status(409).json({ message: 'Username already exists' });
+        }
         await User.create(newUser);
-
-        // ตอบกลับด้วยข้อความ "Register successfully"
-        return res.status(201).send('Register successfully');
+        return res.status(201).json({ message: 'Register successfully'});
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: 'Register failed' });

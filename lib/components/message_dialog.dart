@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 enum MessageType { ok, danger, warning, failed }
 
 class MessageDialog extends StatelessWidget {
-  final String content;
-  final String messageType;
+  final String content, messageType;
+  final String? onConfirmText, onCancelText;
   final VoidCallback? onConfirm;
   final VoidCallback? onCancel;
 
@@ -14,6 +14,8 @@ class MessageDialog extends StatelessWidget {
     required this.messageType,
     this.onConfirm,
     this.onCancel,
+    this.onConfirmText,
+    this.onCancelText,
   });
 
   Color setConfirmBtnColor() {
@@ -86,8 +88,8 @@ class MessageDialog extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Colors.red)),
                 onPressed: onCancel,
-                child: const Text(
-                  'Cancel',
+                child: Text(
+                  '$onCancelText',
                   style: TextStyle(color: Colors.red),
                 ),
               ),
@@ -99,7 +101,7 @@ class MessageDialog extends StatelessWidget {
                 style: FilledButton.styleFrom(
                     backgroundColor: setConfirmBtnColor()),
                 onPressed: onConfirm,
-                child: const Text('Confirm'),
+                child: Text("$onConfirmText"),
               ),
           ],
         )
