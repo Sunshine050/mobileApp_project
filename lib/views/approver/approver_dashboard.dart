@@ -1,24 +1,57 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:pro_mobile/services/general_service.dart';
 
-class DashboardLec extends StatefulWidget {
-  const DashboardLec({super.key});
+class Dashboard extends StatefulWidget {
+  const Dashboard({super.key});
 
   @override
-  State<DashboardLec> createState() => _DashboardLecState();
+  State<Dashboard> createState() => _DashboardState();
 }
 
-class _DashboardLecState extends State<DashboardLec> {
-  // สมมติว่าเรามีจำนวนการจองห้องจากการดึงข้อมูลที่ได้มา
-  int freeRooms = 2;
-  int reservedRooms = 3;
-  int pendingRooms = 6;
-  int disableRooms = 3;
+class _DashboardState extends State<Dashboard> {
+  final GeneralService _generalService = GeneralService();
+
+  List<dynamic> _summary = [
+    {
+      "total_free": "1",
+      "total_pending": "1",
+      "total_reserved": "1",
+      "total_disabled": "1",
+      "total_slot": "1"
+    }
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _getSummary();
+  }
+
+  Future<void> _getSummary() async {
+    try {
+      final response = await _generalService.getSummary().timeout(
+            const Duration(seconds: 10),
+          );
+      if (response.statusCode == 200) {
+        setState(() {
+          _summary = jsonDecode(response.body);
+        });
+        debugPrint(_summary[0]['total_free']);
+      } else {
+        throw Exception(jsonDecode(response.body)['message']);
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    int totalRooms = freeRooms + reservedRooms + pendingRooms + disableRooms;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('SLOT STATUS'),
@@ -35,70 +68,74 @@ class _DashboardLecState extends State<DashboardLec> {
                 sections: [
                   PieChartSectionData(
                     color: const Color(0xFFE34034), // สีสำหรับ RESERVED
-                    value: reservedRooms.toDouble(),
+                    value: double.tryParse(_summary[0]["total_reserved"]),
                     title: '',
                     radius: 90,
                     titleStyle: const TextStyle(
                       fontSize: 14,
                       color: Colors.white,
                     ),
-                    badgeWidget: _buildBadge('RESERVED', reservedRooms),
+                    badgeWidget:
+                        _buildBadge('RESERVED', _summary[0]["total_reserved"]),
                   ),
                   PieChartSectionData(
                     color: const Color(0xFFFFCB30), // สีสำหรับ PENDING
-                    value: pendingRooms.toDouble(),
+                    value: double.tryParse(_summary[0]["total_pending"]),
                     title: '',
                     radius: 90,
                     titleStyle: const TextStyle(
                       fontSize: 14,
                       color: Colors.white,
                     ),
-                    badgeWidget: _buildBadge('PENDING', pendingRooms),
+                    badgeWidget:
+                        _buildBadge('PENDING', _summary[0]["total_pending"]),
                   ),
                   PieChartSectionData(
                     color: const Color(0xFFBCBCBC), // สีสำหรับ DISABLE
-                    value: disableRooms.toDouble(),
+                    value: double.tryParse(_summary[0]["total_disabled"]),
                     title: '',
                     radius: 90,
                     titleStyle: const TextStyle(
                       fontSize: 14,
                       color: Colors.white,
                     ),
-                    badgeWidget: _buildBadge('DISABLE', disableRooms),
+                    badgeWidget:
+                        _buildBadge('DISABLE', _summary[0]["total_disabled"]),
                   ),
                   PieChartSectionData(
                     color: const Color(0xFF3166B7), // สีสำหรับ FREE
-                    value: freeRooms.toDouble(),
+                    value: double.tryParse(_summary[0]["total_free"]),
                     title: '',
                     radius: 90,
                     titleStyle: const TextStyle(
                       fontSize: 14,
                       color: Colors.white,
                     ),
-                    badgeWidget: _buildBadge('FREE', freeRooms),
+                    badgeWidget: _buildBadge('FREE', _summary[0]["total_free"]),
                   ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 20),
-          Text('Total: $totalRooms', style: const TextStyle(fontSize: 18)),
+          Text('Total Slot: ${_summary[0]["total_slot"]}',
+              style: const TextStyle(fontSize: 18)),
 
           // แสดงสัญลักษณ์สีและข้อความ
           const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildLegend(Color(0xFF3166B7), "FREE"),
+              _buildLegend(const Color(0xFF3166B7), "FREE"),
               const SizedBox(width: 10),
-              _buildLegend(Color(0xFFE34034), "RESERVED"),
+              _buildLegend(const Color(0xFFE34034), "RESERVED"),
               const SizedBox(width: 10),
-              _buildLegend(Color(0xFFFFCB30), "PENDING"),
+              _buildLegend(const Color(0xFFFFCB30), "PENDING"),
               const SizedBox(width: 10),
-              _buildLegend(Color(0xFFBCBCBC), "DISABLE"),
+              _buildLegend(const Color(0xFFBCBCBC), "DISABLE"),
             ],
           ),
-          Spacer(),
+          const Spacer(),
         ],
       ),
     );
@@ -122,7 +159,7 @@ class _DashboardLecState extends State<DashboardLec> {
     );
   }
 
-  Widget _buildBadge(String title, int value) {
+  Widget _buildBadge(String title, String value) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -134,7 +171,7 @@ class _DashboardLecState extends State<DashboardLec> {
           ),
         ),
         Text(
-          value.toString(),
+          value,
           style: const TextStyle(
             fontSize: 16,
             color: Colors.white,

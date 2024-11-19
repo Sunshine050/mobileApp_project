@@ -147,7 +147,7 @@ class _BrowseState extends State<Browse> {
         title: const Text("Room List"),
         actions: [
           Padding(
-              padding: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.only(right: 8),
               child: SearchButton(
                 searchBy: SearchBy.room,
                 api: _onSearch,

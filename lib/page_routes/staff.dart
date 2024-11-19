@@ -27,7 +27,7 @@ class _StaffRouteState extends State<StaffRoute> {
     _pagesOptions = <Widget>[
       const Browse(role: "staff"),
       const HistoryStaff(), // need to add userid
-      const DashboardStaff(),
+      const Dashboard(),
       const Profile(role: "staff")
     ];
   }

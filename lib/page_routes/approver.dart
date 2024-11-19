@@ -29,7 +29,7 @@ class _ApproverRouteState extends State<ApproverRoute> {
       const Browse(role: "approver"),
       const ApproveRequestPage(),
       const HistoryLec(),
-      const DashboardLec(),
+      const Dashboard(),
       const Profile(role: "approver")
     ];
   }

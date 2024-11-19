@@ -27,7 +27,7 @@ class _SearchButtonState extends State<SearchButton> {
     return Row(
       children: [
         AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
+          duration: const Duration(milliseconds: 200),
           width: _isExpanded ? MediaQuery.of(context).size.width * 0.8 : 0,
           height: 45,
           child: TextField(
