@@ -38,16 +38,18 @@ class _BrowseState extends State<Browse> {
     super.initState();
 
     // api get _rooms
-    // _getBookmarked();
+    _getBookmarked();
     _getRoom();
 
     _filtersModel.addListener(() {
       _filterRooms();
     });
+  }
 
-    _rooms.addListener(() {
-      _getBookmarked();
-    });
+  @override
+  void dispose() {
+    _filtersModel.removeListener(() {});
+    super.dispose();
   }
 
   Future<void> _getRoom() async {
@@ -117,6 +119,26 @@ class _BrowseState extends State<Browse> {
     return _bookmarkedRooms.any((room) => room['room_id'] == currentID);
   }
 
+  Future<void> _onSearch(String searchQuery) async {
+    try {
+      final response = await _roomsService.searchRoom(searchQuery).timeout(
+            const Duration(seconds: 10),
+          );
+      if (response.statusCode == 200) {
+        setState(() {
+          _rooms.setRooms(roomList: jsonDecode(response.body));
+        });
+        // debugPrint(_rooms.length.toString());
+      } else {
+        throw Exception(jsonDecode(response.body)['message']);
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -128,7 +150,7 @@ class _BrowseState extends State<Browse> {
               padding: const EdgeInsets.only(right: 16),
               child: SearchButton(
                 searchBy: SearchBy.room,
-                controller: _searchController,
+                api: _onSearch,
               ))
         ],
       ),
@@ -234,7 +256,7 @@ class _BrowseState extends State<Browse> {
             return (widget.role == "staff")
                 ? Positioned(
                     right: 20.0,
-                    bottom: 70.0,
+                    bottom: 20.0,
                     child: FloatingActionButton(
                       backgroundColor: Colors.white,
                       onPressed: () {
@@ -246,7 +268,10 @@ class _BrowseState extends State<Browse> {
                                     )));
                         null;
                       },
-                      child: const Icon(Icons.add),
+                      child: const Icon(
+                        Icons.add,
+                        color: Color.fromRGBO(16, 80, 176, 1.0),
+                      ),
                     ),
                   )
                 : const SizedBox.shrink();
@@ -254,12 +279,5 @@ class _BrowseState extends State<Browse> {
         ]),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _filtersModel.removeListener(() {});
-    _rooms.removeListener(() {});
-    super.dispose();
   }
 }

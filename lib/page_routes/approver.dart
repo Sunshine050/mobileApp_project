@@ -27,8 +27,8 @@ class _ApproverRouteState extends State<ApproverRoute> {
     super.initState();
     _pagesOptions = <Widget>[
       const Browse(role: "approver"),
-      ApproveRequestPage(),
-      const HistoryLec(), // need to add userid
+      const ApproveRequestPage(),
+      const HistoryLec(),
       const DashboardLec(),
       const Profile(role: "approver")
     ];

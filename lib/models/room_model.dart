@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
-
-class RoomModel extends ChangeNotifier {
+class RoomModel {
   static final RoomModel _instance = RoomModel._internal();
 
   factory RoomModel() {
@@ -13,7 +11,6 @@ class RoomModel extends ChangeNotifier {
 
   void setRooms({required List<dynamic> roomList}) {
     _roomList = roomList;
-    notifyListeners();
   }
 
   List getRooms() {

@@ -28,7 +28,7 @@ class _StudentRouteState extends State<StudentRoute> {
     super.initState();
     _pagesOptions = <Widget>[
       const Browse(role: "student"),
-      BookingStatus(),
+      const BookingStatus(),
       const History(),
       const Profile(role: "student")
     ];

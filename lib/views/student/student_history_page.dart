@@ -23,10 +23,6 @@ class _HistoryState extends State<History> {
     super.initState();
 
     _getBooking();
-
-    reservations.addListener(() {
-      forceRerendered();
-    });
   }
 
   @override
@@ -35,19 +31,32 @@ class _HistoryState extends State<History> {
     super.dispose();
   }
 
-  void forceRerendered() {
-    if (mounted) {
-      setState(() {
-        bool temp = true;
-      });
-    }
-  }
-
   Future<void> _getBooking() async {
     try {
       final response = await _generalService.getUserHistory().timeout(
             const Duration(seconds: 10),
           );
+      if (response.statusCode == 200) {
+        setState(() {
+          reservations.setBookings(bookingList: jsonDecode(response.body));
+        });
+        // debugPrint(_rooms.length.toString());
+      } else {
+        throw Exception(jsonDecode(response.body)['message']);
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
+  Future<void> _onSearch(String searchQuery) async {
+    try {
+      final response =
+          await _generalService.getSearchHistory(searchQuery).timeout(
+                const Duration(seconds: 10),
+              );
       if (response.statusCode == 200) {
         setState(() {
           reservations.setBookings(bookingList: jsonDecode(response.body));
@@ -94,8 +103,8 @@ class _HistoryState extends State<History> {
           Padding(
               padding: const EdgeInsets.only(right: 16),
               child: SearchButton(
-                searchBy: SearchBy.booking,
-                controller: _searchController,
+                searchBy: SearchBy.room,
+                api: _onSearch,
               ))
         ],
       ),
@@ -125,154 +134,138 @@ class _HistoryState extends State<History> {
                 ),
               ],
             )
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: reservations.getBookings().length,
-                    itemBuilder: (context, index) {
-                      final reservation = reservations.getBookings()[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 2.0, horizontal: 16.0),
-                        child: Container(
-                          padding: const EdgeInsets.all(4.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  // Left Side
-                                  Expanded(
-                                    flex: 2,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          reservation['room_name'],
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w500,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          maxLines: 1,
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'Slot: ${mapSlotValue(reservation['slot'])}',
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Date: ${reservation['booking_date'].split("T")[0]}',
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                        ),
-                                      ],
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: reservations.getBookings().length,
+                      itemBuilder: (context, index) {
+                        final reservation = reservations.getBookings()[index];
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                // Left Side
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      reservation['room_name'],
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      maxLines: 1,
                                     ),
-                                  ),
-                                  // Right Side
-                                  Expanded(
-                                    flex: 1,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Slot: ${mapSlotValue(reservation['slot'])}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Date: ${reservation['booking_date'].split("T")[0]}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                // Right Side
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            reservation['status'] == 'Approved'
-                                                ? const Icon(Icons.check_circle,
-                                                    color: Colors.green)
+                                        reservation['status'] == 'Approved'
+                                            ? const Icon(Icons.check_circle,
+                                                color: Colors.green)
+                                            : reservation['status'] ==
+                                                    'Rejected'
+                                                ? const Icon(Icons.cancel,
+                                                    color: Colors.red)
+                                                : const Icon(Icons.cancel,
+                                                    color: Colors.grey),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          reservation['status'],
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w400,
+                                            color: reservation['status'] ==
+                                                    'Approved'
+                                                ? Colors.green
                                                 : reservation['status'] ==
                                                         'Rejected'
-                                                    ? const Icon(Icons.cancel,
-                                                        color: Colors.red)
-                                                    : const Icon(Icons.cancel,
-                                                        color: Colors.grey),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              reservation['status'],
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w400,
-                                                color: reservation['status'] ==
-                                                        'Approved'
-                                                    ? Colors.green
-                                                    : reservation['status'] ==
-                                                            'Rejected'
-                                                        ? Colors.red
-                                                        : Colors.grey,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 2),
-                                        // Show the approver only if the status is not 'Canceled'
-                                        if (reservation['status'] != 'Canceled')
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.end,
-                                            children: [
-                                              Text(
-                                                'By: [${reservation['approved_by'] ?? 'Not assigned'}]',
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w300,
-                                                ),
-                                              ),
-                                            ],
+                                                    ? Colors.red
+                                                    : Colors.grey,
                                           ),
+                                        ),
                                       ],
                                     ),
+                                    const SizedBox(height: 2),
+                                    // Show the approver only if the status is not 'Canceled'
+                                    if (reservation['status'] != 'cancel')
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            '${reservation['status'] == 'approved' ? "Approved by:" : "Rejected By:"}  ${reservation['approved_by']}',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w300,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 5),
+                            // Add Reason section
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Request reason: ',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    // color: Colors.grey,
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 5),
-                              // Add Reason section
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Your reason: ',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      // color: Colors.grey,
-                                    ),
+                                ),
+                                // const SizedBox(height: 2),
+                                Text(
+                                  '${reservation['reason']}',
+                                  softWrap: true,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w300,
+                                    color: Colors.black,
                                   ),
-                                  // const SizedBox(height: 2),
-                                  Text(
-                                    '${reservation['reason'] ?? 'No reason provided'}',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w300,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              Container(
-                                width: double.infinity,
-                                height: 1,
-                                color: Colors.grey,
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            const Divider()
+                          ],
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
     );
   }

@@ -29,8 +29,9 @@ const getBookingRequestById = (req, res) => {
 
 // อนุมัติการจอง
 const approveBooking = (req, res) => {
-  const { bookingId, approverId } = req.body;
-  Booking.updateStatus(bookingId, 'approved', approverId, (err) => {
+  const { bookingId } = req.body;
+  const { userId } = req.user;
+  Booking.updateStatus(bookingId, 'approved', userId, (err) => {
     if (err) {
       return res.status(500).json({ error: 'Error approving booking' });
     }
@@ -41,8 +42,9 @@ const approveBooking = (req, res) => {
 //-------------------------------------------------------------------//
 // ปิดการอนุมัติการจอง
 const rejectBooking = (req, res) => {
-  const { bookingId, approverId } = req.body;
-  Booking.updateStatus(bookingId, 'rejected', approverId, (err) => {
+  const { bookingId } = req.body;
+  const { userId } = req.user;
+  Booking.updateStatus(bookingId, 'rejected', userId, (err) => {
     if (err) {
       return res.status(500).json({ error: 'Error rejecting booking' });
     }

@@ -1,47 +1,31 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:pro_mobile/services/approver_service.dart';
 
 class ApproveRequestPage extends StatefulWidget {
+  const ApproveRequestPage({super.key});
+
   @override
-  _ApproveRequestPageState createState() => _ApproveRequestPageState();
+  State<ApproveRequestPage> createState() => _ApproveRequestPageState();
 }
 
 class _ApproveRequestPageState extends State<ApproveRequestPage> {
-  final List<Map<String, dynamic>> originalReservations = [
-    {
-      "roomTitle": "Room A",
-      "time": "08:00 - 10:00",
-      "date": "01/01/2077",
-      "userName": "John Doe",
-      "reason": "Meeting discussion",
-    },
-    {
-      "roomTitle": "Room B",
-      "time": "10:00 - 12:00",
-      "date": "01/01/2077",
-      "userName": "Jane Smith",
-      "reason": "Project planning",
-    },
-    {
-      "roomTitle": "Room C",
-      "time": "12:00 - 14:00",
-      "date": "01/01/2077",
-      "userName": "Michael Brown",
-      "reason": "Training session",
-    },
-  ];
+  final ApproverService _approverService = ApproverService();
 
-  List<Map<String, dynamic>> reservations = [];
+  List<dynamic> reservations = [];
 
   get actioned => null;
 
   @override
   void initState() {
     super.initState();
-    // Initialize reservations with original data
-    reservations = List.from(originalReservations);
+
+    _getPendingReservations();
   }
 
-  void _showConfirmationDialog(BuildContext context, String action, int index) {
+  void _showConfirmationDialog(
+      BuildContext context, String action, int bookingID) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -53,21 +37,20 @@ class _ApproveRequestPageState extends State<ApproveRequestPage> {
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
-                setState(() {
-                  reservations.removeAt(index); // Remove the reservation
-                });
+                debugPrint(bookingID.toString());
+                _approveRequest(bookingID, status: action);
                 Navigator.of(context).pop(); // Close the dialog
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Request $actioned successfully!'),
+                    content: Text('$action successfully!'),
                   ),
                 );
               },
-              child: Text('Confirm'),
+              child: const Text('Confirm'),
             ),
           ],
         );
@@ -75,26 +58,87 @@ class _ApproveRequestPageState extends State<ApproveRequestPage> {
     );
   }
 
-  void _refreshReservations() {
-    setState(() {
-      reservations = List.from(originalReservations); // Reset to original data
-    });
+  Future<void> _approveRequest(int bookingID, {required String status}) async {
+    try {
+      final response;
+      if (status == "approve") {
+        response =
+            await _approverService.approve({"bookingId": bookingID}).timeout(
+          const Duration(seconds: 10),
+        );
+      } else {
+        response =
+            await _approverService.reject({"bookingId": bookingID}).timeout(
+          const Duration(seconds: 10),
+        );
+      }
+
+      if (response.statusCode == 200) {
+        _getPendingReservations();
+        debugPrint(reservations.length.toString());
+      } else {
+        throw Exception(jsonDecode(response.body)['message']);
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
+  Future<void> _getPendingReservations() async {
+    try {
+      final response = await _approverService.getPendingRequest().timeout(
+            const Duration(seconds: 10),
+          );
+      if (response.statusCode == 200) {
+        setState(() {
+          reservations = jsonDecode(response.body);
+        });
+        debugPrint(reservations.length.toString());
+      } else {
+        throw Exception(jsonDecode(response.body)['message']);
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
+  String mapSlotValue(slot) {
+    final String temp;
+    switch (slot) {
+      case "slot_1":
+        temp = "08:00 - 10:00";
+        break;
+      case "slot_2":
+        temp = "10:00 - 12:00";
+        break;
+      case "slot_3":
+        temp = "13:00 - 15:00";
+        break;
+      default:
+        temp = "15:00 - 17:00";
+        break;
+    }
+    return temp;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Reservation Status'),
+        title: const Text('Reservation Status'),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: _refreshReservations, // Refresh button
+            icon: const Icon(Icons.refresh),
+            onPressed: _getPendingReservations, // Refresh button
           ),
         ],
       ),
       body: reservations.isEmpty
-          ? Center(
+          ? const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -114,89 +158,156 @@ class _ApproveRequestPageState extends State<ApproveRequestPage> {
                 ],
               ),
             )
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    padding: EdgeInsets.all(8),
-                    itemCount: reservations.length,
-                    itemBuilder: (context, index) {
-                      final reservation = reservations[index];
-                      return Card(
-                        margin: EdgeInsets.symmetric(vertical: 8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                reservation['roomTitle'],
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(reservation['time']),
-                              Text(reservation['date']),
-                              SizedBox(height: 8),
-                              Text("Req by: ${reservation['userName']}"),
-                              SizedBox(height: 8),
-                              TextField(
-                                enabled: false,
-                                decoration: InputDecoration(
-                                  labelText: 'Reason',
-                                  hintText: reservation['reason'],
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                              SizedBox(height: 12),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      _showConfirmationDialog(
-                                          context, 'approve', index);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.check),
-                                        SizedBox(width: 4),
-                                        Text('Approve'),
-                                      ],
-                                    ),
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: reservations.length,
+                      itemBuilder: (context, index) {
+                        final reservation = reservations[index];
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                // Left Side
+                                Expanded(
+                                  flex: 5,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        reservation['room_name'],
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        maxLines: 1,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Slot: ${mapSlotValue(reservation['slot'])}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Date: ${reservation['booking_date'].split("T")[0]}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Req By: ${reservation['username']}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  SizedBox(width: 8),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      _showConfirmationDialog(
-                                          context, 'reject', index);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.close),
-                                        SizedBox(width: 4),
-                                        Text('Reject'),
-                                      ],
-                                    ),
+                                ),
+                                // Right Side
+                                Expanded(
+                                  flex: 3,
+                                  child: Column(
+                                    children: [
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          _showConfirmationDialog(context,
+                                              'approve', reservation['id']);
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green,
+                                        ),
+                                        child: const Row(
+                                          // mainAxisAlignment:
+                                          //     MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.check,
+                                              color: Colors.white,
+                                            ),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'Approve',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          _showConfirmationDialog(context,
+                                              'reject', reservation['id']);
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                        ),
+                                        child: const Row(
+                                          // mainAxisAlignment:
+                                          //     MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.close,
+                                              color: Colors.white,
+                                            ),
+                                            SizedBox(width: 4),
+                                            Text('Reject',
+                                                style: TextStyle(
+                                                    color: Colors.white)),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                    ],
                                   ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            // Add Reason section
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Request reason: ',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    // color: Colors.grey,
+                                  ),
+                                ),
+                                // const SizedBox(height: 2),
+                                Text(
+                                  '${reservation['reason']}',
+                                  softWrap: true,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w300,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            const Divider(),
+                          ],
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
     );
   }

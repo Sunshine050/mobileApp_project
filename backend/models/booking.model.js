@@ -27,7 +27,7 @@ const Booking = {
   //-------------------------------------------------------------------//
 
   // find booking by room name
-  findByRoomName: (room_name,userId, role, callback) => {
+  findByRoomName: (room_name, userId, role, callback) => {
     if (role == "student") {
       db.query('SELECT * FROM bookings INNER JOIN rooms ON rooms.id = bookings.room_id WHERE rooms.room_name LIKE ? AND bookings.user_id = ?', ['%' + room_name + '%', userId], (err, result) => {
         if (err) {
@@ -102,32 +102,45 @@ const Booking = {
         }
 
         if (results.affectedRows > 0) {
-          if (status === 'approved') {
-            Booking.getRequestById(bookingId, (err, booking) => {
+          Booking.getRequestById(bookingId, (err, booking) => {
+            if (err) {
+              console.error('Error retrieving booking details:', err);
+              return callback(err);
+            }
+            if (!booking) {
+              console.error('Booking not found for bookingId:', bookingId);
+              return callback(new Error('Booking not found'));
+            }
+
+            const { room_id, slot } = booking;
+            let roomStatus;
+            if (status === "approved") {
+              roomStatus = 'reserved';
+            } else {
+              roomStatus = 'free';
+            }
+
+            Room.isSlotDisabled(room_id, slot, (err, results) => {
               if (err) {
-                console.error('Error retrieving booking details:', err);
+                console.error('Error updating room status:', err);
                 return callback(err);
               }
-              if (!booking) {
-                console.error('Booking not found for bookingId:', bookingId);
-                return callback(new Error('Booking not found'));
+              if (results.length == 0) {
+                Room.updateSlotStatus(room_id, slot, roomStatus, (err) => {
+                  if (err) {
+                    console.error('Error updating room status:', err);
+                    return callback(err);
+                  }
+                  console.log('Room status updated successfully for room_id:', room_id);
+                  return callback(null);
+                });
+              } else {
+                console.log('Error: slot disabled');
+                return callback('Error: slot disabled');
               }
-
-              const { room_id, slot } = booking;
-              const roomStatus = 'reserved';
-
-              Room.updateSlotStatus(room_id, slot, roomStatus, (err) => {
-                if (err) {
-                  console.error('Error updating room status:', err);
-                  return callback(err);
-                }
-                console.log('Room status updated successfully for room_id:', room_id);
-                return callback(null);
-              });
             });
-          } else {
-            return callback(null);
-          }
+          });
+
         } else {
           console.error('No booking found for bookingId:', bookingId);
           return callback(new Error('Booking not found or status already updated'));
@@ -139,7 +152,7 @@ const Booking = {
   //-------------------------------------------------------------------//
 
   getAllRequests: (callback) => {
-    db.query('SELECT * FROM bookings WHERE status = "pending"', (err, results) => {
+    db.query('SELECT b.id, b.slot, b.status, b.booking_date, b.reason, r.room_name, u.username FROM bookings b INNER JOIN rooms r ON r.id = b.room_id LEFT JOIN users u ON b.user_id = u.id WHERE status = "pending"', (err, results) => {
       if (err) {
         console.error('Error retrieving all pending bookings:', err);
         return callback(err);

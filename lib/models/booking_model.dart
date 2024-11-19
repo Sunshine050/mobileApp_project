@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
-
-class BookingModel extends ChangeNotifier {
+class BookingModel {
   static final BookingModel _instance = BookingModel._internal();
 
   factory BookingModel() {
@@ -13,7 +11,6 @@ class BookingModel extends ChangeNotifier {
 
   void setBookings({required List<dynamic> bookingList}) {
     _bookingList = bookingList;
-    notifyListeners();
   }
 
   List getBookings() {

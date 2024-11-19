@@ -37,9 +37,9 @@ class _RoomCardState extends State<RoomCard> {
     super.initState();
   }
 
-  // if all slot are "reserved" or "disable" => disable btn
+  // if all slot not = 'free' => disable btn
   bool isAvailable(List<String> slotStatus) {
-    return slotStatus.any((status) => status == 'free' || status == "pending");
+    return slotStatus.any((status) => status == 'free');
   }
 
   @override
