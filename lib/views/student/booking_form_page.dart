@@ -55,7 +55,7 @@ class _BookingState extends State<Booking> {
     }
   }
 
-  Future<dynamic> submit() async {
+  Future<dynamic> submit(String roomname) async {
     if (_selectedSlot == null || _reasonController.text.isEmpty) {
       showDialog(
         context: context,
@@ -78,10 +78,54 @@ class _BookingState extends State<Booking> {
       "slot": _selectedSlot,
       "reason": _reasonController.text
     };
-    // debugPrint(bookingData['reason']);
-
-    final response = await studentService.bookRoom(bookingData);
-    return response;
+    try {
+      final response = await studentService.bookRoom(bookingData).timeout(
+            const Duration(seconds: 10),
+          );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return MessageDialog(
+              content: 'Your Reservation for $roomname \nhas been confirmed',
+              onConfirmText: "OK",
+              onConfirm: () {
+                // change to status page
+                _currentRouteIndex.setIndex(
+                    index: 1); // set index to request status page
+                Navigator.pop(context);
+                Navigator.pop(context);
+                Navigator.pushReplacement<void, void>(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext context) => const StudentRoute(),
+                  ),
+                );
+              },
+              // no cancel button
+              onCancel: null,
+              messageType: 'ok',
+            );
+          },
+        );
+      } else {
+        throw Exception(response.body);
+      }
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return MessageDialog(
+            content: e.toString().replaceFirst('Exception: ', ''),
+            onConfirmText: 'OK',
+            onConfirm: () {
+              Navigator.of(context).pop();
+            },
+            messageType: 'error',
+          );
+        },
+      );
+    }
   }
 
   // disable radio slot
@@ -329,67 +373,7 @@ class _BookingState extends State<Booking> {
                                     const Color.fromRGBO(16, 80, 176, 1.0)),
                             onPressed: (() async {
                               // api
-                              final resposne = await submit();
-                              if (resposne.statusCode >= 200 &&
-                                  resposne.statusCode < 300) {
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return MessageDialog(
-                                      content:
-                                          'Your Reservation for ${snapshot.data[0]["room_name"]}\nhas been confirmed',
-                                      onConfirmText: "OK",
-                                      onConfirm: () {
-                                        // change to status page
-                                        _currentRouteIndex.setIndex(
-                                            index:
-                                                1); // set index to request status page
-                                        Navigator.pop(context);
-                                        Navigator.pop(context);
-                                        Navigator.pushReplacement<void, void>(
-                                          context,
-                                          MaterialPageRoute<void>(
-                                            builder: (BuildContext context) =>
-                                                const StudentRoute(),
-                                          ),
-                                        );
-                                      },
-                                      // no cancel button
-                                      onCancel: null,
-                                      messageType: 'ok',
-                                    );
-                                  },
-                                );
-                              } else {
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return MessageDialog(
-                                      content:
-                                          'Something went wrong\nplease try again',
-                                      onConfirmText: "OK",
-                                      onConfirm: () {
-                                        // change to status page
-                                        _currentRouteIndex.setIndex(
-                                            index:
-                                                0); // set index to browse page
-                                        Navigator.pop(context);
-                                        Navigator.pop(context);
-                                        Navigator.pushReplacement<void, void>(
-                                          context,
-                                          MaterialPageRoute<void>(
-                                            builder: (BuildContext context) =>
-                                                const StudentRoute(),
-                                          ),
-                                        );
-                                      },
-                                      // no cancel button
-                                      onCancel: null,
-                                      messageType: 'error',
-                                    );
-                                  },
-                                );
-                              }
+                              submit(snapshot.data[0]["room_name"]);
                             }),
                             child: const Text(
                               "Reserve this room",

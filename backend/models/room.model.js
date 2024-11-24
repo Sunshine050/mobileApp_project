@@ -11,19 +11,27 @@ const Room = {
     },
     //-------------------------------------------------------------------//
     isSlotFree: (roomId, slot, callback) => {
-        db.query('select ? from rooms where id = ? and ? = "free"', [slot, roomId, slot], callback);
+        let SLOT = {};
+        SLOT[slot] = "free";
+        db.query('select id from rooms where id = ? and ?', [roomId, SLOT], callback);
     },
     //-------------------------------------------------------------------//
     isSlotPending: (roomId, slot, callback) => {
-        db.query('select ? from rooms where id = ? and ? = "pending"', [slot, roomId, slot], callback);
+        let SLOT = {};
+        SLOT[slot] = "pending";
+        db.query('select id from rooms where id = ? and ?', [roomId, SLOT], callback);
     },
     //-------------------------------------------------------------------//
     isSlotReserved: (roomId, slot, callback) => {
-        db.query('select ? from rooms where id = ? and ? = "reserved"', [slot, roomId, slot], callback);
+        let SLOT = {};
+        SLOT[slot] = "reserved";
+        db.query('select id from rooms where id = ? and ?', [roomId, SLOT], callback);
     },
     //-------------------------------------------------------------------//
     isSlotDisabled: (roomId, slot, callback) => {
-        db.query('select ? from rooms where id = ? and ? = "disabled"', [slot, roomId, slot], callback);
+        let SLOT = {};
+        SLOT[slot] = "disabled";
+        db.query('select id from rooms where id = ? and ?', [roomId, SLOT], callback);
     },
     //-------------------------------------------------------------------//
     bookmarked: (userId, roomId, callback) => {
@@ -57,20 +65,13 @@ const Room = {
     },
     //-------------------------------------------------------------------//
     filterRoom: (slots, callback) => {
-        let conditions;
-        console.log(slots);
-
         if (slots.includes("any")) {
             conditions = 'slot_1 = "free" or slot_2 = "free" or slot_3 = "free" or slot_4 = "free"'
         } else {
             conditions = slots.reduce((acc, curr) => `${acc}${acc ? ' and ' : ''}${curr} = 'free'`, '');
         }
-        console.log(conditions);
 
         const sql = `SELECT * FROM rooms WHERE ${conditions}`;
-        console.log(sql);
-
-        // console.log(sql);
         db.query(sql, slots, callback);
     },
     //-------------------------------------------------------------------//

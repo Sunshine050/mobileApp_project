@@ -10,22 +10,25 @@ const bookRoom = (req, res) => {
   if (!userId || !room_id || !slot || !reason) {
     return res.status(400).send('Missing required fields');
   }
-  // Booking.getPending(userId, (err, result) => {
-  //   if (err) {
-  //     console.error("Error creating booking:", err);
-  //     return res.status(500).send('Error creating booking');
-  //   }
+  Booking.getPending(userId, (err, alreadyRequested) => {
+    if (err) {
+      console.error("Error checking slot availability:", err);
+      return res.status(500).send('Error checking slot availability');
+    }
+    
+    if (alreadyRequested.length != 0) {
+      return res.status(400).send(`Can reserve one room at a time`);
+    }
 
-  //   if (result.length != 0) {
-  //     return res.status(401).send('Inpending Request');
-  //   }
     Room.isSlotFree(room_id, slot, (err, isFree) => {
       if (err) {
         console.error("Error checking slot availability:", err);
         return res.status(500).send('Error checking slot availability');
       }
+      console.log(isFree);
+      
 
-      if (!isFree) {
+      if (isFree.length == 0) {
         return res.status(400).send('This slot is unavailable');
       }
 
@@ -50,7 +53,7 @@ const bookRoom = (req, res) => {
         });
       });
     });
-  // });
+  })
 
 };
 
